@@ -1,59 +1,42 @@
-using System;
 using UnityEngine;
 
 public class CheckpointManager : MonoBehaviour
 {
-    public Checkpoint[] checkpoints; // Asignar desde el inspector
+    public Checkpoint[] mainCheckpoints; // Asignar desde el inspector
+    public Checkpoint[] auxiliaryCheckpoints; // Asignar desde el inspector
     public GoalCheckpoint goalCheckpoint; // La meta, asignada desde el inspector
-    public Action OnLapCompleted; // Evento para notificar que se completó una vuelta
 
     private void Awake()
     {
-        // Asigna el índice a cada checkpoint
-        for (int i = 0; i < checkpoints.Length; ++i)
+        // Asigna el Ã­ndice a cada checkpoint
+        for (int i = 0; i < mainCheckpoints.Length; ++i)
         {
-            checkpoints[i].Index = i;
-            checkpoints[i].Manager = this;
+            mainCheckpoints[i].Index = i;
+            mainCheckpoints[i].Manager = this;
+        }
+        for (int i = 0; i < auxiliaryCheckpoints.Length; ++i)
+        {
+            auxiliaryCheckpoints[i].Index = i;
+            auxiliaryCheckpoints[i].Manager = this;
         }
         goalCheckpoint.Manager = this;
     }
 
-    public void CheckCheckpointOrder(Checkpoint checkpoint)
+    public void CheckCheckpointOrder(Checkpoint checkpoint, GameObject vehicle)
     {
-        int index = checkpoint.Index;
-
-        // Verifica si el checkpoint actual y el anterior están pasados
-        if (index == 0 || checkpoints[index - 1].IsPassed)
+        RaceTracker raceTracker = vehicle.GetComponent<RaceTracker>();
+        if (raceTracker != null)
         {
-            checkpoint.IsPassed = true;
-            Debug.Log($"Checkpoint {index} registrado correctamente. Estado: {checkpoint.IsPassed}");
-        }
-        else
-        {
-            Debug.Log($"Checkpoint {index} no puede ser registrado porque el anterior no se ha pasado.");
+            raceTracker.UpdateCheckpointIndex(checkpoint);
         }
     }
 
-    public void CheckGoal()
+    public void CheckGoal(GameObject vehicle)
     {
-        for (int i = 0; i < checkpoints.Length; ++i)
+        RaceTracker raceTracker = vehicle.GetComponent<RaceTracker>();
+        if (raceTracker != null)
         {
-            if (checkpoints[i].IsPassed == false)
-            {
-                Debug.Log("Aún no has pasado todos los checkpoints.");
-                return;
-            }
-        }
-        Debug.Log("¡Vuelta completada!");
-        OnLapCompleted?.Invoke(); // Llamar al evento
-        ResetCheckpoints(); // Reiniciar los checkpoints para la siguiente vuelta
-    }
-
-    private void ResetCheckpoints()
-    {
-        for (int i = 0; i < checkpoints.Length; ++i)
-        {
-            checkpoints[i].IsPassed = false;
+            raceTracker.CompleteLap();
         }
     }
 }

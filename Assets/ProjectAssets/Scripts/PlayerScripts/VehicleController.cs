@@ -5,7 +5,7 @@ using Cinemachine;
 using UnityEngine.InputSystem;
 using NaughtyAttributes;
 
-public class VehicleController : MonoBehaviour
+public class VehicleController : RaceTracker
 {
     [Expandable]
     [BoxGroup("Settings")]

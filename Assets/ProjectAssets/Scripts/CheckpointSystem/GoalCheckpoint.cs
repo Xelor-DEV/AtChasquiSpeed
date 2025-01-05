@@ -16,9 +16,9 @@ public class GoalCheckpoint : MonoBehaviour
     }
     private void OnTriggerEnter(Collider other)
     {
-        if (other.tag == "Player")
+        if (other.tag == "Player" || other.tag == "AI")
         {
-            manager.CheckGoal();
+            manager.CheckGoal(other.gameObject);
         }
     }
 }
