@@ -1,7 +1,38 @@
 using UnityEngine;
 
-public class GoalCheckpoint : Checkpoint
+public class RaceCheckpoint : Checkpoint
 {
+    public enum CheckpointType
+    {
+        Main,
+        Auxiliary
+    }
+
+    [SerializeField] private int index;
+    [SerializeField] private CheckpointType type;
+    public int Index 
+    {
+        get
+        {
+            return index;
+        }
+        set
+        {
+            index = value;
+        }
+    } 
+    public CheckpointType Type
+    {
+        get 
+        { 
+            return type; 
+        }
+        set 
+        { 
+            type = value; 
+        }
+    }
+
     private void OnTriggerEnter(Collider other)
     {
         if (other.tag == "Player" || other.tag == "AI")
@@ -16,8 +47,8 @@ public class GoalCheckpoint : Checkpoint
 
                 if (raceTracker != null)
                 {
-
-                    manager.CheckGoal(raceTracker.gameObject);
+                    // Pasar el objeto con RaceTracker al CheckpointManager
+                    manager.CheckCheckpointOrder(this, raceTracker.gameObject);
                 }
                 else
                 {

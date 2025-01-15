@@ -2,8 +2,8 @@ using UnityEngine;
 
 public class CheckpointManager : MonoBehaviour
 {
-    public Checkpoint[] mainCheckpoints; // Asignar desde el inspector
-    public Checkpoint[] auxiliaryCheckpoints; // Asignar desde el inspector
+    public RaceCheckpoint[] mainCheckpoints; // Asignar desde el inspector
+    public RaceCheckpoint[] auxiliaryCheckpoints; // Asignar desde el inspector
     public GoalCheckpoint goalCheckpoint; // La meta, asignada desde el inspector
 
     private void Awake()
@@ -29,6 +29,10 @@ public class CheckpointManager : MonoBehaviour
         {
             raceTracker.UpdateCheckpointIndex(checkpoint);
         }
+        else
+        {
+            Debug.Log("No se encontró el componente RaceTracker en el vehículo.");
+        }
     }
 
     public void CheckGoal(GameObject vehicle)
@@ -37,6 +41,10 @@ public class CheckpointManager : MonoBehaviour
         if (raceTracker != null)
         {
             raceTracker.CompleteLap();
+        }
+        else
+        {
+            Debug.Log("No se encontró el componente RaceTracker en el vehículo.");
         }
     }
 }

@@ -1,36 +1,98 @@
 using UnityEngine;
 using NaughtyAttributes;
-using System;
 
 public class RaceTracker : MonoBehaviour
 {
+    [BoxGroup("Real Position")]
+    [SerializeField] private GameObject parentObject;
+
     [BoxGroup("Checkpoint Index")]
     [SerializeField] private int currentMain = -1;
     [BoxGroup("Checkpoint Index")]
     [SerializeField] private int currentAuxiliary = -1;
 
-    [BoxGroup("Laps")]
+    [BoxGroup("Race Stats")]
     [SerializeField] private int lapsCompleted = 0;
+    [BoxGroup("Race Stats")]
+    [SerializeField] private int raceRanking;
 
     [BoxGroup("Checkpoint Manager")]
     [SerializeField] private CheckpointManager checkpointManager;
 
+    public int CurrentMain
+    {
+        get
+        {
+            return currentMain;
+        }
+    }
+
+    public int CurrentAuxiliary
+    {
+        get
+        {
+            return currentAuxiliary;
+        }
+    }
+
+    public int LapsCompleted
+    {
+        get
+        {
+            return lapsCompleted;
+        }
+    }
+
+    public int RaceRanking
+    {
+        get
+        {
+            return raceRanking;
+        }
+        set
+        {
+            raceRanking = value;
+        }
+    }
+
+    public CheckpointManager CheckpointManager
+    {
+        get
+        {
+            return checkpointManager;
+        }
+        set
+        {
+            checkpointManager = value;
+        }
+    }
+
     public void UpdateCheckpointIndex(Checkpoint checkpoint)
     {
-        if (checkpoint.Type == Checkpoint.CheckpointType.Main)
+        RaceCheckpoint raceCheckpoint = checkpoint.gameObject.GetComponent<RaceCheckpoint>();
+
+        if (raceCheckpoint.Type == RaceCheckpoint.CheckpointType.Main)
         {
             // Verificar que el índice del checkpoint es el siguiente al actual
-            if (currentMain + 1 == checkpoint.Index)
+            if (currentMain + 1 == raceCheckpoint.Index)
             {
-                currentMain = checkpoint.Index;
+                currentMain = raceCheckpoint.Index;
+            }
+            else
+            {
+                Debug.Log("Error: El checkpoint principal no es el siguiente al actual");
             }
         }
-        else if (checkpoint.Type == Checkpoint.CheckpointType.Auxiliary)
+        else if (raceCheckpoint.Type == RaceCheckpoint.CheckpointType.Auxiliary)
         {
             // Verificar que el índice del checkpoint auxiliar es el siguiente al actual
-            if (currentAuxiliary + 1 == checkpoint.Index)
+            if (currentAuxiliary + 1 == raceCheckpoint.Index)
             {
-                currentAuxiliary = checkpoint.Index;
+                currentAuxiliary = raceCheckpoint.Index;
+            }
+            else
+            {
+                Debug.Log("Error: El checkpoint auxiliar no es el siguiente al actual");
             }
         }
     }
@@ -48,60 +110,43 @@ public class RaceTracker : MonoBehaviour
             currentMain = -1;  // Reiniciar a -1
             currentAuxiliary = -1;  // Reiniciar a -1
         }
+        else
+        {
+            Debug.Log("Error: No se han completado todos los checkpoints principales");
+        }
     }
 
     public float GetDistanceToNextCheckpoint()
     {
         Checkpoint nextCheckpoint = GetNextCheckpoint();
-        return Vector3.Distance(transform.position, nextCheckpoint.transform.position);
+        return Vector3.Distance(transform.parent.position, nextCheckpoint.transform.position);
     }
 
-    private Checkpoint GetNextCheckpoint()
+    public Checkpoint GetNextCheckpoint()
     {
         // Lógica para obtener el siguiente checkpoint (main o auxiliary)
         Checkpoint nextMainCheckpoint = checkpointManager.mainCheckpoints[(currentMain + 1) % checkpointManager.mainCheckpoints.Length];
         Checkpoint nextAuxiliaryCheckpoint = checkpointManager.auxiliaryCheckpoints[(currentAuxiliary + 1) % checkpointManager.auxiliaryCheckpoints.Length];
 
-        float distanceToMain = Vector3.Distance(transform.position, nextMainCheckpoint.transform.position);
-        float distanceToAuxiliary = Vector3.Distance(transform.position, nextAuxiliaryCheckpoint.transform.position);
+        float distanceToMain = Vector3.Distance(parentObject.transform.position, nextMainCheckpoint.transform.position);
+        float distanceToAuxiliary = Vector3.Distance(parentObject.transform.position, nextAuxiliaryCheckpoint.transform.position);
+        float distanceToGoal = Vector3.Distance(parentObject.transform.position, checkpointManager.goalCheckpoint.transform.position);
 
-        return distanceToMain < distanceToAuxiliary ? nextMainCheckpoint : nextAuxiliaryCheckpoint;
-    }
-
-    public static void CalculateRacePositions(RaceTracker[] raceTrackers)
-    {
-        Array.Sort(raceTrackers, (a, b) =>
+        // Determinar cuál es el checkpoint más cercano
+        if (distanceToMain <= distanceToAuxiliary && distanceToMain <= distanceToGoal)
         {
-            // Comparar vueltas completadas
-            if (a.lapsCompleted != b.lapsCompleted)
-            {
-                return b.lapsCompleted.CompareTo(a.lapsCompleted);
-            }
-
-            // Comparar el checkpoint principal más avanzado
-            if (a.currentMain != b.currentMain)
-            {
-                return b.currentMain.CompareTo(a.currentMain);
-            }
-
-            // Comparar el checkpoint auxiliar más avanzado
-            if (a.currentAuxiliary != b.currentAuxiliary)
-            {
-                return b.currentAuxiliary.CompareTo(a.currentAuxiliary);
-            }
-
-            // Si ambos están en el último checkpoint auxiliar, comparar la distancia a la meta
-            if (a.currentAuxiliary == a.checkpointManager.auxiliaryCheckpoints.Length - 1 &&
-                b.currentAuxiliary == b.checkpointManager.auxiliaryCheckpoints.Length - 1)
-            {
-                // Distancia a la meta (goal)
-                float distanceToGoalA = Vector3.Distance(a.transform.position, a.checkpointManager.goalCheckpoint.transform.position);
-                float distanceToGoalB = Vector3.Distance(b.transform.position, b.checkpointManager.goalCheckpoint.transform.position);
-                return distanceToGoalA.CompareTo(distanceToGoalB);
-            }
-
-            // Si todo lo anterior es igual, usar la distancia al siguiente checkpoint
-            return a.GetDistanceToNextCheckpoint().CompareTo(b.GetDistanceToNextCheckpoint());
-        });
+            // El checkpoint main es el más cercano
+            return nextMainCheckpoint;
+        }
+        else if (distanceToAuxiliary <= distanceToMain && distanceToAuxiliary <= distanceToGoal)
+        {
+            // El checkpoint auxiliary es el más cercano
+            return nextAuxiliaryCheckpoint;
+        }
+        else
+        {
+            // El goal checkpoint es el más cercano
+            return checkpointManager.goalCheckpoint;
+        }
     }
 }

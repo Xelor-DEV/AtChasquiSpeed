@@ -217,6 +217,7 @@ public class VehicleController : RaceTracker
         {
             secondaryParticles.Add(flashParticles.GetChild(i).GetComponent<ParticleSystem>());
         }
+        Debug.Log(transform.parent);
     }
 
     private void Update()

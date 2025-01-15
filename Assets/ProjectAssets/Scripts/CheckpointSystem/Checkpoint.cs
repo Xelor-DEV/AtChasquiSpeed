@@ -2,26 +2,7 @@ using UnityEngine;
 
 public class Checkpoint : MonoBehaviour
 {
-    public enum CheckpointType
-    {
-        Main,
-        Auxiliary
-    }
-
-    [SerializeField] private int index;
-    [SerializeField] private CheckpointManager manager;
-    [SerializeField] private CheckpointType type;
-    public int Index 
-    {
-        get
-        {
-            return index;
-        }
-        set
-        {
-            index = value;
-        }
-    } 
+    [SerializeField] protected CheckpointManager manager;
     public CheckpointManager Manager
     {
         get
@@ -31,25 +12,6 @@ public class Checkpoint : MonoBehaviour
         set
         {
             manager = value;
-        }
-    }
-    public CheckpointType Type
-    {
-        get 
-        { 
-            return type; 
-        }
-        set 
-        { 
-            type = value; 
-        }
-    }
-
-    private void OnTriggerEnter(Collider other)
-    {
-        if (other.tag == "Player" || other.tag == "AI")
-        {
-            manager.CheckCheckpointOrder(this, other.gameObject);
         }
     }
 }
