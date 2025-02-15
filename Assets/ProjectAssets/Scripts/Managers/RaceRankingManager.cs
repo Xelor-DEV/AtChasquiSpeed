@@ -3,24 +3,22 @@ using UnityEngine;
 
 public class RaceRankingManager : MonoBehaviour
 {
-    [SerializeField] private GameObject[] allRacers; // All Racers
+    [SerializeField] private GameObject[] racers; // All Racers
     [SerializeField] private GameObject[] players; // Players
     [SerializeField] private AIManager aiManager; // AI Manager
-    [SerializeField] private float sortInterval = 0.5f; // Intervalo en segundos para llamar a SortRacers
-    [SerializeField] private bool sortRacers = false; // Controla si se quiere ordenar a los corredores
-    [SerializeField] private bool sortAtStart = true; // Controla si el sorting se activa autom醫icamente al inicializar
+    [SerializeField] private float sortInterval = 0.2f;
+    private bool isSortingActive;
 
-    private RaceTracker[] raceTrackers; // Arreglo privado de RaceTrackers
-
-    public GameObject[] AllRacers
+    private Racer[] allRacers;
+    public GameObject[] Racers
     {
         get
         {
-            return allRacers;
+            return racers;
         }
         set
         {
-            allRacers = value;
+            racers = value;
         }
     }
 
@@ -32,135 +30,131 @@ public class RaceRankingManager : MonoBehaviour
     private void OnDisable()
     {
         aiManager.OnAICarsInitialized -= InitializeAllRacers;
-        if (sortRacers == true)
-        {
-            StopCoroutine(SortRacers());
-        }
     }
 
     private void InitializeAllRacers()
     {
         int totalRacers = players.Length + aiManager.AiCars.Length;
-        allRacers = new GameObject[totalRacers];
+        racers = new GameObject[totalRacers];
 
         for (int i = 0; i < totalRacers; ++i)
         {
             if (i < players.Length)
             {
-                allRacers[i] = players[i];
+                racers[i] = players[i];
             }
             else
             {
-                allRacers[i] = aiManager.AiCars[i - players.Length];
+                racers[i] = aiManager.AiCars[i - players.Length];
             }
         }
 
         // Inicializamos el arreglo de RaceTrackers una sola vez
-        raceTrackers = new RaceTracker[allRacers.Length];
+        allRacers = new Racer[allRacers.Length];
         for (int i = 0; i < allRacers.Length; ++i)
         {
             // Usamos GetChild(0) para obtener el primer hijo y luego buscamos el RaceTracker
             Transform childTransform = allRacers[i].transform.GetChild(0);
-            raceTrackers[i] = childTransform.GetComponent<RaceTracker>();
+            allRacers[i] = childTransform.GetComponent<Racer>();
 
-            if (raceTrackers[i] == null)
+            if (allRacers[i] == null)
             {
                 Debug.Log($"RaceTracker no encontrado en el primer hijo de {allRacers[i].name}");
             }
         }
-
-        if (sortAtStart == true)
-        {
-            StartCoroutine(SortRacers());
-        }
+        ActivateRankingSystem();
     }
 
+    public void ActivateRankingSystem()
+    {
+        StartCoroutine(SortRacers());
+    }
+    public void StopRankingSystem()
+    {
+        isSortingActive = false;
+    }
     private IEnumerator SortRacers()
     {
-        // Usamos el arreglo privado de RaceTrackers para evitar crear uno nuevo
-        QuickSort(raceTrackers, 0, raceTrackers.Length - 1);
+        isSortingActive = true;
 
-        // Actualizamos la posici髇 de los corredores
-        for (int i = 0; i < raceTrackers.Length; ++i)
+        while (isSortingActive == true)
         {
-            raceTrackers[i].RaceRanking = i + 1;
-        }
-
-        yield return new WaitForSeconds(sortInterval);
-
-        if (sortRacers == true)
-        {
-            StartCoroutine(SortRacers());
-        }
-        else if(sortRacers == false)
-        {
-            StopCoroutine(SortRacers());
+            QuickSort(allRacers, 0, allRacers.Length - 1);
+            UpdateRacePositions();
+            yield return new WaitForSeconds(sortInterval);
         }
     }
 
-    private void QuickSort(RaceTracker[] array, int low, int high)
+    private void QuickSort(Racer[] racers, int low, int high)
     {
         if (low < high)
         {
-            int pi = DivideArray(array, low, high);
-            QuickSort(array, low, pi - 1);
-            QuickSort(array, pi + 1, high);
+            int partitionIndex = Partition(racers, low, high);
+            QuickSort(racers, low, partitionIndex - 1);
+            QuickSort(racers, partitionIndex + 1, high);
         }
     }
 
-    private int DivideArray(RaceTracker[] array, int low, int high)
+    private int Partition(Racer[] racers, int low, int high)
     {
-        RaceTracker pivot = array[high];
-        int i = (low - 1);
-        for (int j = low; j <= high - 1; ++j)
+        Racer pivot = racers[high];
+        int i = low - 1;
+
+        for (int j = low; j < high; j++)
         {
-            if (CompareRaceTrackers(array[j], pivot) < 0)
+            if (CompareRacers(racers[j], pivot)) // racerJ es mejor que pivot
             {
                 i++;
-                SwapElements(array, i, j);
+                Swap(racers, i, j);
             }
         }
-        SwapElements(array, i + 1, high);
-        return (i + 1);
+        Swap(racers, i + 1, high);
+        return i + 1;
     }
 
-    private void SwapElements(RaceTracker[] array, int i, int j)
+    private bool CompareRacers(Racer a, Racer b)
     {
-        RaceTracker temp = array[i];
-        array[i] = array[j];
-        array[j] = temp;
-    }
-
-    private float CompareRaceTrackers(RaceTracker a, RaceTracker b)
-    {
-        // Comparamos por vueltas completadas
+        // Comparaci贸n de vueltas completadas
         if (a.LapsCompleted != b.LapsCompleted)
-        {
-            return b.LapsCompleted.CompareTo(a.LapsCompleted);
-        }
+            return a.LapsCompleted > b.LapsCompleted;
 
-        // Comparamos por checkpoint principal
-        if (a.CurrentMain != b.CurrentMain)
-        {
-            return b.CurrentMain.CompareTo(a.CurrentMain);
-        }
+        // Comparaci贸n de checkpoints principales
+        if (a.CurrentMainIndex != b.CurrentMainIndex)
+            return a.CurrentMainIndex > b.CurrentMainIndex;
 
-        // Comparamos por checkpoint auxiliar
-        if (a.CurrentAuxiliary != b.CurrentAuxiliary)
-        {
-            return b.CurrentAuxiliary.CompareTo(a.CurrentAuxiliary);
-        }
+        // Comparaci贸n de checkpoints auxiliares
+        if (a.CurrentAuxiliaryIndex != b.CurrentAuxiliaryIndex)
+            return a.CurrentAuxiliaryIndex > b.CurrentAuxiliaryIndex;
 
-        // Si ambos est醤 en el 鷏timo checkpoint auxiliar, calculamos distancia al objetivo
-        if (a.CurrentAuxiliary == a.CheckpointManager.auxiliaryCheckpoints.Length - 1 &&
-            b.CurrentAuxiliary == b.CheckpointManager.auxiliaryCheckpoints.Length - 1)
-        {
-            float distanceToGoalA = Vector3.Distance(a.transform.parent.position, a.CheckpointManager.goalCheckpoint.transform.position);
-            float distanceToGoalB = Vector3.Distance(b.transform.parent.position, b.CheckpointManager.goalCheckpoint.transform.position);
-            return distanceToGoalA.CompareTo(distanceToGoalB);
-        }
+        // Comparaci贸n de distancia al siguiente checkpoint
+        float distanceA = GetDistanceToTarget(a);
+        float distanceB = GetDistanceToTarget(b);
+        return distanceA < distanceB;
+    }
 
-        // Distancia al siguiente checkpoint
-        return a.GetDistanceToNextCheckpoint().CompareTo(b.GetDistanceToNextCheckpoint());
+    private float GetDistanceToTarget(Racer racer)
+    {
+        Checkpoint target = racer.NextCheckpoint;
+        if (target == null) return Mathf.Infinity;
+
+        return Vector3.Distance(
+            racer.transform.position,
+            target.transform.position
+        );
+    }
+
+    private void Swap(Racer[] racers, int i, int j)
+    {
+        Racer temp = racers[i];
+        racers[i] = racers[j];
+        racers[j] = temp;
+    }
+
+    private void UpdateRacePositions()
+    {
+        for (int i = 0; i < allRacers.Length; ++i)
+        {
+            allRacers[i].RaceRank = i + 1;
+        }
     }
 }

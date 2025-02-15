@@ -22,7 +22,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 51
   maxTurboCount: 3
-  turboMultiplier: 1.5
+  turboMultiplier: 2
   turboDuration: 3
   canDrift: 1
   driftTimeScale: 0.7

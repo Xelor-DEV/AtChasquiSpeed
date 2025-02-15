@@ -62,7 +62,7 @@ public class AIManager : MonoBehaviour
         for (int i = 0; i < aiCars.Length; ++i)
         {
             Transform childTransform = aiCars[i].transform.GetChild(0);
-            RaceTracker script = childTransform.GetComponent<RaceTracker>();
+            Racer script = childTransform.GetComponent<Racer>();
             script.CheckpointManager = checkpointManager;
 
             if (script == null)

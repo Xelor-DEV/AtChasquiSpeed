@@ -96,6 +96,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d6d259115af48bc4d8e068dc5d47d1b3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  parentObject: {fileID: 7881340796632699783}
   currentMain: -1
   currentAuxiliary: -1
   lapsCompleted: 0
